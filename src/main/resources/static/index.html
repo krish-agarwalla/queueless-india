@@ -298,11 +298,16 @@
         window.location.href = window.location.pathname;
     }
 
-    function secureFetch(url, options = {}) {
-        const token = localStorage.getItem('jwt_token');
-        const headers = { 'Content-Type': 'application/json', ...options.headers };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        return fetch(url, { ...options, headers });
+    function secureFetch(url,opt={}){
+        const token = localStorage.getItem("jwt_token");
+
+        return fetch(url,{
+            ...opt,
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer " + token
+            }
+        });
     }
 
     // --- APP ACTIONS ---
@@ -358,7 +363,6 @@
         secureFetch(`${API_BASE}/token/skip/${currentOrgId}`, { method: 'PUT' })
             .then(async res => {
                 if (!res.ok) {
-                if (!res.ok) {
                     const err = await res.text();
                     showToast(err.includes("error") ? JSON.parse(err).error : "Queue is empty!", "info");
                 } else {
@@ -367,34 +371,32 @@
             });
     }
 
-    function createOrg(){
-        secureFetch(`${API}/superadmin/create-org`, {
-            method:"POST",
-            body:JSON.stringify({
-                name:orgName.value,
-                type:orgType.value,
-                prefix:orgPrefix.value
+    function createOrg() {
+        const name = document.getElementById("orgName").value;
+        const type = document.getElementById("orgType").value;
+        const prefix = document.getElementById("orgPrefix").value;
+
+        if(!name || !type || !prefix) return showToast("Fill all fields", "error");
+
+        secureFetch(`${API_BASE}/superadmin/create-org`, {
+            method: "POST",
+            body: JSON.stringify({
+                name: name,
+                type: type,
+                prefix: prefix
             })
         })
-            .then(async res=>{
-                if(!res.ok){
-                    const err = await res.text();
-                    throw err;
-                }
+            .then(async res => {
+                if(!res.ok) throw new Error("Failed to create org");
                 return res.json();
             })
-            .then(data=>{
-                toast("Organisation Created Successfully");
-
-                document.getElementById("new-credentials").innerHTML = `
-        <div class="bg-green-900 p-3 rounded">
-            <p><b>Email:</b> ${data.adminEmail}</p>
-            <p><b>Password:</b> ${data.adminPassword}</p>
-        </div>`;
+            .then(data => {
+                const credBox = document.getElementById("new-credentials");
+                credBox.classList.remove("hidden");
+                credBox.innerHTML = `<strong>Account Created!</strong><br>Email: ${data.adminEmail}<br>Password: ${data.adminPassword}`;
+                showToast("Client provisioned successfully", "success");
             })
-            .catch(err=>{
-                toast("Error: " + err, "error");
-            });
+            .catch(() => showToast("API endpoint not implemented yet", "error"));
     }
 
     // --- WEBSOCKETS ---
