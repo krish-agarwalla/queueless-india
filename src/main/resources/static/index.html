@@ -9,156 +9,221 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="bg-gray-100 h-screen font-sans antialiased text-gray-800 flex items-center justify-center">
+<body class="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-gray-100 to-slate-200 h-screen font-sans antialiased text-gray-800 flex items-center justify-center overflow-hidden">
 
-<div id="login-screen" class="hidden w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
-    <div class="text-center mb-8">
-        <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <i class="fa-solid fa-lock text-white text-2xl"></i>
+<div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+<div id="login-screen" class="hidden w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-2xl p-10 border border-white">
+    <div class="text-center mb-10">
+        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30 transform -rotate-3">
+            <i class="fa-solid fa-layer-group text-white text-3xl transform rotate-3"></i>
         </div>
-        <h2 class="text-3xl font-bold text-gray-800">Admin Portal</h2>
-        <p class="text-gray-500 mt-2">Sign in to manage your queues.</p>
+        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Queueless<span class="text-blue-600">OS</span></h2>
+        <p class="text-gray-500 mt-2 font-medium">Sign in to your workspace.</p>
     </div>
-    <div class="space-y-4">
+    <div class="space-y-5">
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input type="email" id="loginEmail" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+            <div class="relative">
+                <i class="fa-solid fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="email" id="loginEmail" class="w-full pl-11 pr-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" placeholder="admin@queueless.in">
+            </div>
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" id="loginPassword" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+            <div class="relative">
+                <i class="fa-solid fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="password" id="loginPassword" class="w-full pl-11 pr-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" placeholder="••••••••">
+            </div>
         </div>
-        <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg mt-4">
-            Secure Login
+        <button onclick="handleLogin()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl mt-6 flex justify-center items-center gap-2">
+            <span>Secure Login</span> <i class="fa-solid fa-arrow-right text-sm"></i>
         </button>
-        <p id="login-error" class="text-red-500 text-sm text-center mt-4 hidden">Invalid credentials</p>
     </div>
 </div>
 
-<div id="app-container" class="hidden w-full h-full max-w-7xl mx-auto p-4 flex gap-6">
+<div id="app-container" class="hidden w-full h-full max-w-[90rem] mx-auto p-4 flex gap-6 items-center justify-center">
 
-    <div id="user-panel" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-gray-900 flex flex-col h-[800px]">
-        <div class="bg-blue-600 text-white p-6 text-center">
-            <h2 class="text-2xl font-bold tracking-tight">Queueless</h2>
-            <p class="text-blue-100 text-sm">Stand anywhere, not in line.</p>
+    <div id="user-panel" class="hidden bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-[8px] border-gray-900 flex flex-col h-[750px] w-full max-w-[380px] relative">
+        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-10"></div>
+
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white pt-12 pb-8 px-6 text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-white/10 backdrop-blur-sm mt-12 transform -skew-y-6 z-0"></div>
+            <h2 class="text-3xl font-extrabold tracking-tight relative z-10">Queueless</h2>
+            <p class="text-blue-100 text-sm font-medium relative z-10 opacity-90 mt-1">Stand anywhere, not in line.</p>
         </div>
-        <div id="join-screen" class="p-6 flex-1 flex flex-col justify-center">
-            <h3 class="text-xl font-bold mb-4 text-center text-gray-800">Loading Location...</h3>
-            <input type="text" id="userName" placeholder="Your Name" class="w-full mb-4 px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none">
-            <input type="email" id="userEmail" placeholder="Your Email" class="w-full mb-6 px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none">
-            <button onclick="joinQueue()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-lg">
-                Get Token
+
+        <div id="join-screen" class="p-8 flex-1 flex flex-col justify-center bg-gray-50 relative z-10 rounded-t-3xl -mt-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 text-center">
+                <i class="fa-solid fa-location-dot text-blue-500 text-2xl mb-2"></i>
+                <h3 class="text-lg font-bold text-gray-800" id="user-org-name">Loading...</h3>
+            </div>
+
+            <input type="text" id="userName" placeholder="Full Name" class="w-full mb-4 px-4 py-4 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+            <input type="email" id="userEmail" placeholder="Email Address" class="w-full mb-8 px-4 py-4 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+
+            <button onclick="joinQueue()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-transform active:scale-95 shadow-lg shadow-blue-500/30">
+                Get My Token
             </button>
         </div>
-        <div id="tracking-screen" class="p-6 flex-1 hidden flex-col items-center">
-            <div class="w-full bg-blue-50 rounded-2xl p-6 text-center mb-6 border border-blue-100">
-                <p class="text-gray-500 font-semibold mb-1">YOUR TOKEN</p>
-                <h1 id="my-token-display" class="text-6xl font-black text-blue-700">--</h1>
+
+        <div id="tracking-screen" class="p-8 flex-1 hidden flex-col items-center bg-gray-50 rounded-t-3xl -mt-4 relative z-10">
+            <div class="w-full bg-white rounded-3xl p-8 text-center mb-6 shadow-sm border border-gray-100">
+                <p class="text-gray-400 font-bold text-xs tracking-widest mb-2 uppercase">Your Token</p>
+                <h1 id="my-token-display" class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">--</h1>
             </div>
-            <div class="w-full grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-gray-50 p-4 rounded-xl text-center border">
-                    <p class="text-xs text-gray-500 font-bold">NOW SERVING</p>
+            <div class="w-full grid grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl text-center shadow-sm border border-gray-100">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Now Serving</p>
                     <p id="now-serving-display" class="text-2xl font-bold text-gray-800">--</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-xl text-center border">
-                    <p class="text-xs text-gray-500 font-bold">PEOPLE AHEAD</p>
+                <div class="bg-white p-5 rounded-2xl text-center shadow-sm border border-gray-100">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Ahead of You</p>
                     <p id="people-ahead-display" class="text-2xl font-bold text-gray-800">0</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="org-admin-panel" class="hidden flex-1 bg-white rounded-2xl shadow-sm border p-8 flex flex-col h-[800px]">
-        <div class="flex justify-between items-start mb-8 border-b pb-4">
+    <div id="org-admin-panel" class="hidden flex-1 bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white p-10 flex flex-col h-[750px] relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2"></div>
+
+        <div class="flex justify-between items-start mb-10 border-b border-gray-100 pb-6">
             <div>
-                <h2 class="text-3xl font-bold text-gray-800">Client Dashboard</h2>
-                <p id="admin-org-name" class="text-gray-500 font-medium">Loading...</p>
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold mb-3 border border-blue-100">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div> Live Dashboard
+                </div>
+                <h2 class="text-4xl font-extrabold text-gray-900 tracking-tight">Client Portal</h2>
+                <p id="admin-org-name" class="text-gray-500 font-medium mt-1">Loading...</p>
             </div>
-            <div class="flex flex-col items-end gap-2">
-                <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500 transition-colors"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
-                <div id="qrcode" class="p-2 bg-white border border-gray-200 rounded-xl shadow-sm"></div>
+            <div class="flex flex-col items-end gap-3">
+                <button onclick="logout()" class="text-sm font-bold text-gray-400 hover:text-gray-800 transition-colors bg-gray-50 px-4 py-2 rounded-lg border"><i class="fa-solid fa-right-from-bracket mr-1"></i> Sign Out</button>
+                <div id="qrcode" class="p-3 bg-white border border-gray-200 rounded-2xl shadow-sm"></div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-blue-50 rounded-xl p-6 border border-blue-100">
-                <h3 class="text-blue-800 font-bold mb-2">NOW SERVING</h3>
-                <p id="admin-now-serving" class="text-5xl font-black text-blue-600">--</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-8 shadow-lg shadow-blue-500/20 text-white flex flex-col justify-between">
+                <div>
+                    <h3 class="text-blue-200 font-bold tracking-widest text-sm mb-2 opacity-80">NOW SERVING</h3>
+                    <p id="admin-now-serving" class="text-7xl font-black">--</p>
+                </div>
+                <i class="fa-solid fa-bullhorn text-6xl opacity-20 self-end"></i>
             </div>
-            <div class="bg-gray-50 rounded-xl p-6 border">
-                <h3 class="text-gray-500 font-bold mb-2">WAITING</h3>
-                <p id="admin-total-waiting" class="text-5xl font-black text-gray-800">0</p>
+
+            <div class="bg-gray-50 rounded-[2rem] p-8 border border-gray-200 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-gray-400 font-bold tracking-widest text-sm mb-2 uppercase">Total Waiting</h3>
+                    <p id="admin-total-waiting" class="text-7xl font-black text-gray-800">0</p>
+                </div>
+                <i class="fa-solid fa-users text-6xl text-gray-200 self-end"></i>
             </div>
-            <div class="flex flex-col gap-3 justify-center">
-                <button onclick="callNext()" class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-colors shadow-md">
-                    <i class="fa-solid fa-check-circle"></i> Mark Served
+
+            <div class="flex flex-col gap-4 justify-center">
+                <button onclick="callNext()" class="w-full py-6 bg-green-500 hover:bg-green-600 text-white font-extrabold text-xl rounded-[1.5rem] transition-all transform active:scale-95 shadow-lg shadow-green-500/30 flex flex-col items-center justify-center gap-2">
+                    <i class="fa-solid fa-check-circle text-3xl"></i> Mark Served
                 </button>
-                <button onclick="skipNext()" class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl border border-red-200 transition-colors">
+                <button onclick="skipNext()" class="w-full py-5 bg-white hover:bg-red-50 text-red-500 font-bold rounded-[1.5rem] border-2 border-red-100 hover:border-red-200 transition-all transform active:scale-95 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-forward-step"></i> Skip (No-Show)
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="super-admin-panel" class="hidden flex-1 bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 p-8 flex flex-col h-[800px] text-white">
-        <div class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+    <div id="super-admin-panel" class="hidden flex-1 bg-gray-950 rounded-[2rem] shadow-2xl border border-gray-800 p-10 flex flex-col h-[750px] text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-900/20 rounded-full blur-3xl -z-10 transform translate-x-1/3 -translate-y-1/3"></div>
+
+        <div class="flex justify-between items-center mb-10 border-b border-gray-800 pb-6">
             <div>
-                <h2 class="text-3xl font-bold text-white">Master Control Room</h2>
-                <p class="text-blue-400 font-medium">Welcome back, Krish.</p>
+                <h2 class="text-4xl font-extrabold text-white tracking-tight">Master Control</h2>
+                <p class="text-blue-400 font-medium mt-1">Welcome back, Krish.</p>
             </div>
-            <button onclick="logout()" class="px-4 py-2 bg-gray-800 hover:bg-red-600 rounded-lg transition-colors text-sm font-bold">Logout</button>
+            <button onclick="logout()" class="px-5 py-2.5 bg-gray-800 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all text-sm font-bold border border-gray-700 hover:border-red-500/50">Sign Out</button>
         </div>
 
         <div class="grid grid-cols-3 gap-6 mb-8">
-            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                <p class="text-gray-400 font-bold mb-1">TOTAL CLIENTS</p>
-                <p class="text-4xl font-black text-white">1</p>
+            <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-gray-800">
+                <p class="text-gray-500 font-bold text-xs tracking-widest mb-2">TOTAL CLIENTS</p>
+                <p id="stat-total-clients" class="text-5xl font-black text-white">0</p>
             </div>
-            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                <p class="text-gray-400 font-bold mb-1">TOKENS ISSUED TODAY</p>
-                <p class="text-4xl font-black text-blue-400">0</p>
+            <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-gray-800">
+                <p class="text-gray-500 font-bold text-xs tracking-widest mb-2">TOKENS TODAY</p>
+                <p id="stat-total-tokens" class="text-5xl font-black text-blue-500">0</p>
             </div>
-            <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                <p class="text-gray-400 font-bold mb-1">SYSTEM HEALTH</p>
-                <p class="text-2xl font-bold text-green-400 mt-2"><i class="fa-solid fa-circle-check"></i> All Systems Operational</p>
-            </div>
-            <div class="bg-gray-800 p-6 rounded-xl mb-6">
-                <h3 class="text-lg font-bold mb-4">Create Organisation</h3>
-
-                <input id="orgName" placeholder="Organisation Name" class="w-full mb-2 p-2 rounded bg-gray-700">
-                <input id="orgType" placeholder="Type (Hospital/Bank)" class="w-full mb-2 p-2 rounded bg-gray-700">
-                <input id="orgPrefix" placeholder="Prefix (H/B)" class="w-full mb-2 p-2 rounded bg-gray-700">
-
-                <button onclick="createOrg()" class="bg-blue-600 px-4 py-2 rounded mt-2">
-                    Create Organisation
-                </button>
-
-                <div id="new-credentials" class="mt-4 text-green-400"></div>
+            <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-gray-800 flex flex-col justify-center">
+                <p class="text-gray-500 font-bold text-xs tracking-widest mb-2">SYSTEM HEALTH</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
+                    <p class="text-lg font-bold text-gray-300">Operational</p>
+                </div>
             </div>
         </div>
 
-        <div class="bg-gray-800 rounded-xl p-6 flex-1 border border-gray-700">
-            <h3 class="text-xl font-bold mb-4">Active Organisations</h3>
-            <div class="bg-gray-700 p-4 rounded-lg flex justify-between items-center">
-                <div>
-                    <p class="font-bold">City General Hospital</p>
-                    <p class="text-sm text-gray-400">ID: 1 | Prefix: H</p>
+        <div class="flex gap-6 flex-1">
+            <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-gray-800 w-1/3 flex flex-col">
+                <h3 class="text-lg font-bold mb-4 text-gray-300"><i class="fa-solid fa-plus text-blue-500 mr-2"></i>New Client</h3>
+                <input id="orgName" placeholder="Business Name" class="w-full mb-3 px-4 py-3 rounded-xl bg-gray-950 border border-gray-800 focus:border-blue-500 outline-none text-sm">
+                <input id="orgType" placeholder="Type (e.g., Hospital)" class="w-full mb-3 px-4 py-3 rounded-xl bg-gray-950 border border-gray-800 focus:border-blue-500 outline-none text-sm">
+                <input id="orgPrefix" placeholder="Token Prefix (e.g., H)" class="w-full mb-4 px-4 py-3 rounded-xl bg-gray-950 border border-gray-800 focus:border-blue-500 outline-none text-sm uppercase">
+                <button onclick="createOrg()" class="w-full bg-blue-600 hover:bg-blue-500 px-4 py-3 rounded-xl font-bold transition-colors">Generate Account</button>
+                <div id="new-credentials" class="mt-4 text-sm text-green-400 bg-green-900/20 p-4 rounded-xl hidden border border-green-500/20"></div>
+            </div>
+
+            <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-gray-800 flex-1 flex flex-col">
+                <h3 class="text-lg font-bold mb-4 text-gray-300"><i class="fa-solid fa-server text-blue-500 mr-2"></i>Active Deployments</h3>
+                <div class="overflow-y-auto pr-2 space-y-3">
+                    <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 flex justify-between items-center group hover:border-gray-600 transition-colors">
+                        <div>
+                            <p class="font-bold text-white">City General Hospital</p>
+                            <p class="text-xs text-gray-500 mt-1">Tenant ID: 1 &bull; Prefix: H</p>
+                        </div>
+                        <span class="bg-green-500/10 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/20">Active</span>
+                    </div>
                 </div>
-                <span class="bg-green-900 text-green-300 px-3 py-1 rounded-full text-xs font-bold">Active</span>
             </div>
         </div>
     </div>
-
 </div>
 
 <script>
-    // This automatically grabs the current domain (e.g., http://localhost:8080 or https://queueless.onrender.com)
     const API_BASE = window.location.origin + "/api";
-
-    // 1. Core State & Routing Logic
     let currentOrgId = 1;
 
+    // --- CUSTOM TOAST UI LOGIC ---
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+
+        let colorClass, iconClass;
+        if (type === 'success') { colorClass = 'bg-gray-900 border-green-500'; iconClass = 'fa-check-circle text-green-400'; }
+        else if (type === 'error') { colorClass = 'bg-gray-900 border-red-500'; iconClass = 'fa-circle-exclamation text-red-400'; }
+        else { colorClass = 'bg-gray-900 border-blue-500'; iconClass = 'fa-info-circle text-blue-400'; }
+
+        toast.className = `transform translate-x-full transition-all duration-300 ease-out border-l-4 rounded-lg shadow-xl p-4 flex items-center gap-3 text-white pointer-events-auto ${colorClass}`;
+        toast.innerHTML = `<i class="fa-solid ${iconClass} text-xl"></i><p class="font-medium text-sm">${message}</p>`;
+
+        container.appendChild(toast);
+
+        // Trigger slide in
+        requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+
+        // Remove after delay
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            toast.classList.add('opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // --- ROUTING LOGIC ---
     function initApp() {
         const urlParams = new URLSearchParams(window.location.search);
         const viewMode = urlParams.get('view');
@@ -168,40 +233,32 @@
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('app-container').classList.add('hidden');
 
-        // ROUTE A: Public Mobile View (No login required)
         if (viewMode === 'user') {
             currentOrgId = urlParams.get('orgId') || 1;
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('user-panel').classList.remove('hidden');
-            document.getElementById('user-panel').classList.add('w-full', 'max-w-md', 'mx-auto');
             loadPublicData();
             connectWebSocket();
             return;
         }
 
-        // ROUTE B: Not logged in? Show Login Screen
         if (!jwtToken) {
             document.getElementById('login-screen').classList.remove('hidden');
             return;
         }
 
-        // ROUTE C: Logged in as SUPER ADMIN
         if (role === 'SUPER_ADMIN') {
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('super-admin-panel').classList.remove('hidden');
-
-            // Fetch real analytics!
             secureFetch(`${API_BASE}/analytics/global`)
                 .then(res => res.json())
                 .then(data => {
-                    // Update the HTML elements (you'll need to add IDs to these elements in your HTML)
-                    document.getElementById('stat-total-clients').innerText = data.totalClients;
-                    document.getElementById('stat-total-tokens').innerText = data.totalTokensIssued;
-                });
+                    document.getElementById('stat-total-clients').innerText = data.totalClients || 0;
+                    document.getElementById('stat-total-tokens').innerText = data.totalTokensIssued || 0;
+                }).catch(() => showToast("Failed to load analytics", "error"));
             return;
         }
 
-        // ROUTE D: Logged in as ORG ADMIN (Client)
         if (role === 'ORG_ADMIN') {
             currentOrgId = localStorage.getItem('user_orgId');
             document.getElementById('app-container').classList.remove('hidden');
@@ -211,10 +268,12 @@
         }
     }
 
-    // 2. Authentication Logic
+    // --- AUTHENTICATION ---
     function handleLogin() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
+
+        if(!email || !password) return showToast("Enter credentials", "error");
 
         fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
@@ -222,43 +281,36 @@
             body: JSON.stringify({ email, password })
         })
             .then(async res => {
-                if (!res.ok) throw new Error("Login failed");
+                if (!res.ok) throw new Error();
                 return res.json();
             })
             .then(data => {
                 localStorage.setItem('jwt_token', data.token);
                 localStorage.setItem('user_role', data.role);
                 localStorage.setItem('user_orgId', data.orgId);
-                window.location.reload(); // Reload to trigger the router
+                window.location.reload();
             })
-            .catch(() => {
-                document.getElementById('login-error').classList.remove('hidden');
-            });
+            .catch(() => showToast("Invalid email or password", "error"));
     }
 
     function logout() {
         localStorage.clear();
-        window.location.href = window.location.pathname; // Reload clear URL
+        window.location.href = window.location.pathname;
     }
 
-    // 3. API Wrapper (Automatically adds the security token)
     function secureFetch(url, options = {}) {
         const token = localStorage.getItem('jwt_token');
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers
-        };
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
         return fetch(url, { ...options, headers });
     }
 
-    // 4. Load Data & Actions
+    // --- APP ACTIONS ---
     function loadPublicData() {
         fetch(`${API_BASE}/org/${currentOrgId}`)
             .then(res => res.json())
-            .then(data => { document.querySelector('#join-screen h3').innerText = data.name; });
+            .then(data => { document.getElementById('user-org-name').innerText = data.name; })
+            .catch(() => showToast("Could not load location", "error"));
     }
 
     function loadAdminData() {
@@ -266,15 +318,14 @@
             .then(res => res.json())
             .then(data => {
                 document.getElementById('admin-org-name').innerText = `${data.name} (ID: ${data.id})`;
-                // Generate QR Code dynamically
                 const joinUrl = `${window.location.origin}${window.location.pathname}?orgId=${currentOrgId}&view=user`;
-                new QRCode(document.getElementById("qrcode"), { text: joinUrl, width: 80, height: 80 });
+                new QRCode(document.getElementById("qrcode"), { text: joinUrl, width: 80, height: 80, colorDark: "#1e293b" });
             });
     }
 
     function joinQueue() {
         const name = document.getElementById('userName').value;
-        if(!name) return alert("Please enter your name");
+        if(!name) return showToast("Please enter your name", "error");
 
         fetch(`${API_BASE}/token/${currentOrgId}`, {
             method: 'POST',
@@ -286,26 +337,60 @@
                 document.getElementById('join-screen').classList.add('hidden');
                 document.getElementById('tracking-screen').classList.remove('hidden');
                 document.getElementById('my-token-display').innerText = data.tokenNumber;
-            });
+                showToast("Successfully joined queue!", "success");
+            })
+            .catch(() => showToast("Failed to join queue", "error"));
     }
 
     function callNext() {
-        // Notice we use secureFetch here because it's locked down!
         secureFetch(`${API_BASE}/token/next/${currentOrgId}`, { method: 'PUT' })
             .then(async res => {
-                if (!res.ok) alert(await res.text() || "Queue is empty!");
+                if (!res.ok) {
+                    const err = await res.text();
+                    showToast(err.includes("error") ? JSON.parse(err).error : "Queue is empty!", "info");
+                } else {
+                    showToast("Called next person", "success");
+                }
             });
     }
 
     function skipNext() {
-        // Notice we use secureFetch here because it's locked down!
         secureFetch(`${API_BASE}/token/skip/${currentOrgId}`, { method: 'PUT' })
             .then(async res => {
-                if (!res.ok) alert(await res.text() || "Queue is empty!");
+                if (!res.ok) {
+                    const err = await res.text();
+                    showToast(err.includes("error") ? JSON.parse(err).error : "Queue is empty!", "info");
+                } else {
+                    showToast("Marked as no-show", "error");
+                }
             });
     }
 
-    // 5. WebSockets
+    function createOrg() {
+        const name = document.getElementById("orgName").value;
+        const type = document.getElementById("orgType").value;
+        const prefix = document.getElementById("orgPrefix").value;
+
+        if(!name || !type || !prefix) return showToast("Fill all fields", "error");
+
+        secureFetch(`${API_BASE}/superadmin/create-org`, {
+            method: "POST",
+            body: JSON.stringify({ name, type, prefix })
+        })
+            .then(async res => {
+                if(!res.ok) throw new Error("Failed to create org");
+                return res.json();
+            })
+            .then(data => {
+                const credBox = document.getElementById("new-credentials");
+                credBox.classList.remove("hidden");
+                credBox.innerHTML = `<strong>Account Created!</strong><br>Email: ${data.adminEmail}<br>Password: ${data.adminPassword}`;
+                showToast("Client provisioned successfully", "success");
+            })
+            .catch(() => showToast("API endpoint not implemented yet", "error"));
+    }
+
+    // --- WEBSOCKETS ---
     let stompClient = null;
     function connectWebSocket() {
         const socket = new SockJS(`${API_BASE.replace('/api', '')}/ws-queue`);
@@ -316,28 +401,16 @@
                 const data = JSON.parse(message.body);
                 document.getElementById('now-serving-display').innerText = data.nowServing || "--";
                 document.getElementById('people-ahead-display').innerText = data.peopleAhead || "0";
-                document.getElementById('admin-now-serving').innerText = data.nowServing || "--";
-                document.getElementById('admin-total-waiting').innerText = data.peopleAhead || "0";
+
+                const adminServing = document.getElementById('admin-now-serving');
+                if(adminServing) {
+                    adminServing.innerText = data.nowServing || "--";
+                    document.getElementById('admin-total-waiting').innerText = data.peopleAhead || "0";
+                }
             });
         });
     }
-    function createOrg() {
-        const name = document.getElementById("orgName").value;
-        const type = document.getElementById("orgType").value;
-        const prefix = document.getElementById("orgPrefix").value;
 
-        secureFetch(`${API_BASE}/superadmin/create-org`, {
-            method: "POST",
-            body: JSON.stringify({ name, type, prefix })
-        })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("new-credentials").innerHTML =
-                    `Admin Created:<br>Email: ${data.adminEmail}<br>Password: ${data.adminPassword}`;
-            });
-    }
-
-    // Boot the app
     initApp();
 </script>
 </body>
