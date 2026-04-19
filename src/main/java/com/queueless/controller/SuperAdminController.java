@@ -18,14 +18,13 @@ public class SuperAdminController {
     @PostMapping("/create-org")
     public ResponseEntity<?> createOrg(@RequestBody Map<String, String> req) {
 
-        User admin = adminService.createOrganisationWithAdmin(
+        var admin = adminService.createOrganisationWithAdmin(
                 req.get("name"),
                 req.get("type"),
                 req.get("prefix")
         );
 
         return ResponseEntity.ok(Map.of(
-                "orgName", req.get("name"),
                 "adminEmail", admin.getEmail(),
                 "adminPassword", admin.getPassword(),
                 "orgId", admin.getOrganisation().getId()
