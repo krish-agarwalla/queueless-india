@@ -23,19 +23,16 @@
     <div class="space-y-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input type="email" id="loginEmail" value="admin@queueless.in" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="email" id="loginEmail" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" id="loginPassword" value="admin123" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="password" id="loginPassword" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg mt-4">
             Secure Login
         </button>
         <p id="login-error" class="text-red-500 text-sm text-center mt-4 hidden">Invalid credentials</p>
-    </div>
-    <div class="mt-6 text-xs text-gray-400 text-center">
-        Test Client: hospital@client.com / client123
     </div>
 </div>
 
@@ -125,6 +122,19 @@
             <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
                 <p class="text-gray-400 font-bold mb-1">SYSTEM HEALTH</p>
                 <p class="text-2xl font-bold text-green-400 mt-2"><i class="fa-solid fa-circle-check"></i> All Systems Operational</p>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-xl mb-6">
+                <h3 class="text-lg font-bold mb-4">Create Organisation</h3>
+
+                <input id="orgName" placeholder="Organisation Name" class="w-full mb-2 p-2 rounded bg-gray-700">
+                <input id="orgType" placeholder="Type (Hospital/Bank)" class="w-full mb-2 p-2 rounded bg-gray-700">
+                <input id="orgPrefix" placeholder="Prefix (H/B)" class="w-full mb-2 p-2 rounded bg-gray-700">
+
+                <button onclick="createOrg()" class="bg-blue-600 px-4 py-2 rounded mt-2">
+                    Create Organisation
+                </button>
+
+                <div id="new-credentials" class="mt-4 text-green-400"></div>
             </div>
         </div>
 
@@ -310,6 +320,21 @@
                 document.getElementById('admin-total-waiting').innerText = data.peopleAhead || "0";
             });
         });
+    }
+    function createOrg() {
+        const name = document.getElementById("orgName").value;
+        const type = document.getElementById("orgType").value;
+        const prefix = document.getElementById("orgPrefix").value;
+
+        secureFetch(`${API_BASE}/superadmin/create-org`, {
+            method: "POST",
+            body: JSON.stringify({ name, type, prefix })
+        })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("new-credentials").innerHTML =
+                    `Admin Created:<br>Email: ${data.adminEmail}<br>Password: ${data.adminPassword}`;
+            });
     }
 
     // Boot the app
