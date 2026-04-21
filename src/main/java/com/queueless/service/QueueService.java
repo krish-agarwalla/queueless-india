@@ -26,6 +26,9 @@ public class QueueService {
                 .orElseThrow(() -> new RuntimeException("Organisation not found"));
     }
     public Token joinQueue(Long orgId, User userRequest) {
+        if (userRequest.getName() == null || userRequest.getName().isEmpty()) {
+            throw new RuntimeException("Name is required");
+        }
         Organisation org = orgRepository.findById(orgId)
                 .orElseThrow(() -> new RuntimeException("Organisation not found"));
 
