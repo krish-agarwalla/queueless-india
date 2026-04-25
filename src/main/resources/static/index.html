@@ -339,14 +339,14 @@
 
     // --- APP ACTIONS ---
     function loadPublicData() {
-        fetch(`${API_BASE}/org/${currentOrgId}`)
+        secureFetch(`${API_BASE}/org/${currentOrgId}`)
             .then(res => res.json())
             .then(data => { document.getElementById('user-org-name').innerText = data.name; })
             .catch(() => showToast("Could not load location", "error"));
     }
 
     function loadAdminData() {
-        fetch(`${API_BASE}/org/${currentOrgId}`)
+        secureFetch(`${API_BASE}/org/${currentOrgId}`)
             .then(res => res.json())
             .then(data => {
                 document.getElementById('admin-org-name').innerText = `${data.name} (ID: ${data.id})`;
