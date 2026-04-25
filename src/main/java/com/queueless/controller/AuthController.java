@@ -26,23 +26,25 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
-            // 1. Verify credentials with Spring Security
+            System.out.println("LOGIN ATTEMPT: " + request.getEmail());
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
 
-            // 2. Fetch the user to get their role and org details
+            System.out.println("AUTH SUCCESS");
+
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // 3. Generate the JWT Token
             String jwtToken = jwtService.generateToken(user);
 
-            // 4. Send back everything the frontend needs
-            Long orgId = (user.getOrganisation() != null) ? user.getOrganisation().getId() : null;
-            return ResponseEntity.ok(new AuthResponse(jwtToken, user.getRole().name(), orgId, user.getName()));
+            return ResponseEntity.ok(new AuthResponse(jwtToken, user.getRole().name(),
+                    user.getOrganisation() != null ? user.getOrganisation().getId() : null,
+                    user.getName()));
 
         } catch (Exception e) {
+            e.printStackTrace(); // 🔥 IMPORTANT
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
     }
