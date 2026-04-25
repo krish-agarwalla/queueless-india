@@ -26,7 +26,7 @@
         <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30 transform -rotate-3">
             <i class="fa-solid fa-layer-group text-white text-3xl transform rotate-3"></i>
         </div>
-        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Queueless<span class="text-blue-600">OS</span></h2>
+        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Queue<span class="text-blue-600">less</span></h2>
         <p class="text-gray-500 mt-2 font-medium">Sign in to your workspace.</p>
     </div>
     <div class="space-y-5">
@@ -170,7 +170,7 @@
         <div class="flex gap-6 flex-1">
             <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-gray-800 w-1/3 flex flex-col">
                 <h3 class="text-lg font-bold mb-4 text-gray-300"><i class="fa-solid fa-plus text-blue-500 mr-2"></i>New Client</h3>
-                <input id="orgName" placeholder="Business Name(Do not use any symbol other than'-'" class="w-full mb-3 px-4 py-3 rounded-xl bg-gray-950 border border-gray-800 focus:border-blue-500 outline-none text-sm">
+                <input id="orgName" placeholder="Business Name" class="w-full mb-3 px-4 py-3 rounded-xl bg-gray-950 border border-gray-800 focus:border-blue-500 outline-none text-sm">
                 <input id="orgType" placeholder="Type (e.g., Hospital)" class="w-full mb-3 px-4 py-3 rounded-xl bg-gray-950 border border-gray-800 focus:border-blue-500 outline-none text-sm">
                 <input id="orgPrefix" placeholder="Token Prefix (e.g., H)" class="w-full mb-4 px-4 py-3 rounded-xl bg-gray-950 border border-gray-800 focus:border-blue-500 outline-none text-sm uppercase">
                 <button onclick="createOrg()" class="w-full bg-blue-600 hover:bg-blue-500 px-4 py-3 rounded-xl font-bold transition-colors">Generate Account</button>
@@ -179,15 +179,7 @@
 
             <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-gray-800 flex-1 flex flex-col">
                 <h3 class="text-lg font-bold mb-4 text-gray-300"><i class="fa-solid fa-server text-blue-500 mr-2"></i>Active Deployments</h3>
-                <div class="overflow-y-auto pr-2 space-y-3">
-                    <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 flex justify-between items-center group hover:border-gray-600 transition-colors">
-                        <div>
-                            <p class="font-bold text-white">City General Hospital</p>
-                            <p class="text-xs text-gray-500 mt-1">Tenant ID: 1 &bull; Prefix: H</p>
-                        </div>
-                        <span class="bg-green-500/10 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/20">Active</span>
-                    </div>
-                </div>
+                <div id="org-list" class="overflow-y-auto pr-2 space-y-3"></div>
             </div>
         </div>
     </div>
@@ -278,14 +270,33 @@
             loadAdminData();
             connectWebSocket();
         }
+        if (role === 'SUPER_ADMIN') {
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('super-admin-panel').classList.remove('hidden');
+
+            secureFetch(`${API_BASE}/analytics/global`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('stat-total-clients').innerText = data.totalClients || 0;
+                    document.getElementById('stat-total-tokens').innerText = data.totalTokensIssued || 0;
+                });
+
+            loadAllOrgs(); // 🔥 ADD THIS
+
+            return;
+        }
     }
 
     // --- AUTHENTICATION ---
     function handleLogin() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
+        const btn = document.querySelector("#login-screen button");
 
-        if(!email || !password) return showToast("Enter credentials", "error");
+        if (!email || !password) return showToast("Enter credentials", "error");
+
+        btn.innerText = "Logging in...";
+        btn.disabled = true;
 
         fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
@@ -302,7 +313,11 @@
                 localStorage.setItem('user_orgId', data.orgId);
                 window.location.reload();
             })
-            .catch(() => showToast("Invalid email or password", "error"));
+            .catch(() => showToast("Invalid email or password", "error"))
+            .finally(() => {
+                btn.innerText = "Secure Login";
+                btn.disabled = false;
+            });
     }
 
     function logout() {
@@ -430,6 +445,7 @@
                 showToast("Client provisioned successfully", "success");
             })
             .catch(() => showToast("Failed to create organisation", "error"));
+        loadAllOrgs();
     }
 
     // --- WEBSOCKETS ---
@@ -452,7 +468,36 @@
             });
         });
     }
+    function loadAllOrgs() {
+        secureFetch(`${API_BASE}/superadmin/orgs`)
+            .then(res => res.json())
+            .then(orgs => {
+                const container = document.getElementById("org-list");
+                container.innerHTML = "";
 
+                if (orgs.length === 0) {
+                    container.innerHTML = `<p class="text-gray-500 text-sm">No clients yet</p>`;
+                    return;
+                }
+
+                orgs.forEach(org => {
+                    container.innerHTML += `
+                    <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 flex justify-between items-center hover:border-gray-600 transition">
+                        <div>
+                            <p class="font-bold text-white">${org.name}</p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Tenant ID: ${org.id} • Prefix: ${org.prefix}
+                            </p>
+                        </div>
+                        <span class="bg-green-500/10 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/20">
+                            Active
+                        </span>
+                    </div>
+                `;
+                });
+            })
+            .catch(() => showToast("Failed to load clients", "error"));
+    }
     initApp();
 </script>
 </body>
