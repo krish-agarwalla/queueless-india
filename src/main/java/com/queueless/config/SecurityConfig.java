@@ -50,7 +50,7 @@ public class SecurityConfig {
 
                         // 🌍 PUBLIC API ENDPOINTS
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/org/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/org/**").hasAnyRole("SUPER_ADMIN", "ORG_ADMIN")
                         .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/queue/**").permitAll()
                         .requestMatchers("/api/token/**").permitAll()
