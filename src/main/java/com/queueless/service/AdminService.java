@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,5 +49,8 @@ public class AdminService {
                 "adminEmail", email,
                 "adminPassword", rawPassword
         );
+    }
+    public List<Organisation> getAllOrganisations() {
+        return orgRepo.findAll();
     }
 }

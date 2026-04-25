@@ -30,4 +30,8 @@ public class SuperAdminController {
                 "orgId", admin.getOrganisation().getId()
         ));
     }
+    @GetMapping("/orgs")
+    public ResponseEntity<?> getAllOrgs() {
+        return ResponseEntity.ok(adminService.getAllOrganisations());
+    }
 }
