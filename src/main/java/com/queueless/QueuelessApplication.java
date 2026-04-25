@@ -22,7 +22,7 @@ public class QueuelessApplication {
 			org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
 
 		return args -> {
-			if (userRepo.count() == 0) {
+			if (userRepo.findByEmail("admin@queueless.in").isEmpty()) {
 				// 1. Create the Super Admin (You)
 				com.queueless.model.User superAdmin = new com.queueless.model.User();
 				superAdmin.setName("Krish (Master Admin)");
