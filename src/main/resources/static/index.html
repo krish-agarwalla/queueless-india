@@ -327,7 +327,7 @@
 
     // --- APP ACTIONS ---
     function loadPublicData() {
-        secureFetch(`${API_BASE}/org/${currentOrgId}`)
+        fetch(`${API_BASE}/org/${currentOrgId}`)
             .then(res => res.json())
             .then(data => { document.getElementById('user-org-name').innerText = data.name; })
             .catch(() => showToast("Could not load location", "error"));
@@ -345,7 +345,9 @@
 
                 const joinUrl = `${window.location.origin}${window.location.pathname}?orgId=${currentOrgId}&view=user`;
 
-                new QRCode(document.getElementById("qrcode"), {
+                const qrBox = document.getElementById("qrcode");
+                qrBox.innerHTML = "";
+                new QRCode(qrBox, {
                     text: joinUrl,
                     width: 80,
                     height: 80
@@ -442,9 +444,9 @@
             Password: ${data.adminPassword}
         `;
                 showToast("Client provisioned successfully", "success");
+                loadAllOrgs();
             })
             .catch(() => showToast("Failed to create organisation", "error"));
-        loadAllOrgs();
     }
 
     // --- WEBSOCKETS ---
@@ -456,15 +458,18 @@
         stompClient.connect({}, function () {
             stompClient.subscribe('/topic/queue/' + currentOrgId, function (message) {
                 const data = JSON.parse(message.body);
+
                 document.getElementById('now-serving-display').innerText = data.nowServing || "--";
                 document.getElementById('people-ahead-display').innerText = data.peopleAhead || "0";
 
                 const adminServing = document.getElementById('admin-now-serving');
                 if(adminServing) {
                     adminServing.innerText = data.nowServing || "--";
-                    document.getElementById('admin-total-waiting').innerText = data.peopleAhead || "0";
+                    document.getElementById('admin-total-waiting').innerText = (data.peopleAhead || 0) + 1;
                 }
             });
+        }, function () {
+            setTimeout(connectWebSocket, 3000); // ✅ reconnect
         });
     }
     function loadAllOrgs() {
@@ -472,15 +477,15 @@
             .then(res => res.json())
             .then(orgs => {
                 const container = document.getElementById("org-list");
-                container.innerHTML = "";
 
                 if (orgs.length === 0) {
                     container.innerHTML = `<p class="text-gray-500 text-sm">No clients yet</p>`;
                     return;
                 }
 
+                let html = "";
                 orgs.forEach(org => {
-                    container.innerHTML += `
+                    html += `
                     <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 flex justify-between items-center hover:border-gray-600 transition">
                         <div>
                             <p class="font-bold text-white">${org.name}</p>
@@ -494,6 +499,8 @@
                     </div>
                 `;
                 });
+
+                container.innerHTML = html;
             })
             .catch(() => showToast("Failed to load clients", "error"));
     }
