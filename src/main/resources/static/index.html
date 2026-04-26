@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <style>
-        /* Custom scrollbar for a cleaner look */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -21,6 +20,7 @@
 
 <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
+<!-- ===================== LOGIN ===================== -->
 <div id="login-screen" class="hidden w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-2xl p-10 border border-white">
     <div class="text-center mb-10">
         <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30 transform -rotate-3">
@@ -50,8 +50,10 @@
     </div>
 </div>
 
+<!-- ===================== APP ===================== -->
 <div id="app-container" class="hidden w-full h-full max-w-[90rem] mx-auto p-4 flex gap-6 items-center justify-center">
 
+    <!-- ========= USER / CUSTOMER PANEL (phone mockup) ========= -->
     <div id="user-panel" class="hidden bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-[8px] border-gray-900 flex flex-col h-[750px] w-full max-w-[380px] relative">
         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-10"></div>
 
@@ -61,20 +63,20 @@
             <p class="text-blue-100 text-sm font-medium relative z-10 opacity-90 mt-1">Stand anywhere, not in line.</p>
         </div>
 
+        <!-- Join screen -->
         <div id="join-screen" class="p-8 flex-1 flex flex-col justify-center bg-gray-50 relative z-10 rounded-t-3xl -mt-4">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 text-center">
                 <i class="fa-solid fa-location-dot text-blue-500 text-2xl mb-2"></i>
                 <h3 class="text-lg font-bold text-gray-800" id="user-org-name">Loading...</h3>
             </div>
-
             <input type="text" id="userName" placeholder="Full Name" class="w-full mb-4 px-4 py-4 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
             <input type="email" id="userEmail" placeholder="Email Address" class="w-full mb-8 px-4 py-4 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
-
             <button id="joinBtn" onclick="joinQueue()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-transform active:scale-95 shadow-lg shadow-blue-500/30">
                 Get My Token
             </button>
         </div>
 
+        <!-- Tracking screen -->
         <div id="tracking-screen" class="p-8 flex-1 hidden flex-col items-center bg-gray-50 rounded-t-3xl -mt-4 relative z-10">
             <div class="w-full bg-white rounded-3xl p-8 text-center mb-6 shadow-sm border border-gray-100">
                 <p class="text-gray-400 font-bold text-xs tracking-widest mb-2 uppercase">Your Token</p>
@@ -93,6 +95,7 @@
         </div>
     </div>
 
+    <!-- ========= ORG ADMIN PANEL ========= -->
     <div id="org-admin-panel" class="hidden flex-1 bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white p-10 flex flex-col h-[750px] relative overflow-hidden">
         <div class="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2"></div>
 
@@ -138,6 +141,7 @@
         </div>
     </div>
 
+    <!-- ========= SUPER ADMIN PANEL ========= -->
     <div id="super-admin-panel" class="hidden flex-1 bg-gray-950 rounded-[2rem] shadow-2xl border border-gray-800 p-10 flex flex-col h-[750px] text-white relative overflow-hidden">
         <div class="absolute top-0 right-0 w-96 h-96 bg-blue-900/20 rounded-full blur-3xl -z-10 transform translate-x-1/3 -translate-y-1/3"></div>
 
@@ -183,13 +187,14 @@
             </div>
         </div>
     </div>
-</div>
+
+</div><!-- end app-container -->
 
 <script>
     const API_BASE = window.location.origin + "/api";
     let currentOrgId = 1;
 
-    // --- CUSTOM TOAST UI LOGIC ---
+    // ===================== TOAST =====================
     let isToastActive = false;
 
     function showToast(message, type = 'info') {
@@ -202,62 +207,65 @@
         let colorClass, iconClass;
         if (type === 'success') {
             colorClass = 'bg-gray-900 border-green-500';
-            iconClass = 'fa-check-circle text-green-400';
+            iconClass  = 'fa-check-circle text-green-400';
         } else if (type === 'error') {
             colorClass = 'bg-gray-900 border-red-500';
-            iconClass = 'fa-circle-exclamation text-red-400';
+            iconClass  = 'fa-circle-exclamation text-red-400';
         } else {
             colorClass = 'bg-gray-900 border-blue-500';
-            iconClass = 'fa-info-circle text-blue-400';
+            iconClass  = 'fa-info-circle text-blue-400';
         }
 
         toast.className = `transform translate-x-full transition-all duration-300 border-l-4 rounded-lg shadow-xl p-4 flex items-center gap-3 text-white ${colorClass}`;
         toast.innerHTML = `<i class="fa-solid ${iconClass} text-xl"></i><p class="text-sm">${message}</p>`;
-
         container.appendChild(toast);
 
         requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
 
         setTimeout(() => {
             toast.classList.add('translate-x-full', 'opacity-0');
-            setTimeout(() => {
-                toast.remove();
-                isToastActive = false;
-            }, 300);
+            setTimeout(() => { toast.remove(); isToastActive = false; }, 300);
         }, 2500);
     }
 
-    // --- ROUTING LOGIC ---
+    // ===================== ROUTING =====================
     function initApp() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const viewMode = urlParams.get('view');
-        const jwtToken = localStorage.getItem('jwt_token');
-        const role = localStorage.getItem('user_role');
+        const urlParams  = new URLSearchParams(window.location.search);
+        const viewMode   = urlParams.get('view');
+        const jwtToken   = localStorage.getItem('jwt_token');
+        const role       = localStorage.getItem('user_role');
 
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('app-container').classList.add('hidden');
 
+        // --- Public user / customer view ---
         if (viewMode === 'user') {
             currentOrgId = urlParams.get('orgId') || 1;
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('user-panel').classList.remove('hidden');
+            // FIX: use the public /queue/info/ endpoint instead of /org/ which requires auth
             loadPublicData();
             connectWebSocket();
             return;
         }
 
+        // --- Not logged in ---
         if (!jwtToken) {
             document.getElementById('login-screen').classList.remove('hidden');
             return;
         }
 
+        // --- Org Admin ---
         if (role === 'ORG_ADMIN') {
             currentOrgId = localStorage.getItem('user_orgId');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('org-admin-panel').classList.remove('hidden');
             loadAdminData();
             connectWebSocket();
+            return;
         }
+
+        // --- Super Admin ---
         if (role === 'SUPER_ADMIN') {
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('super-admin-panel').classList.remove('hidden');
@@ -265,34 +273,33 @@
             secureFetch(`${API_BASE}/analytics/global`)
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('stat-total-clients').innerText = data.totalClients || 0;
-                    document.getElementById('stat-total-tokens').innerText = data.totalTokensIssued || 0;
-                });
+                    document.getElementById('stat-total-clients').innerText = data.totalClients      || 0;
+                    document.getElementById('stat-total-tokens').innerText  = data.totalTokensIssued || 0;
+                })
+                .catch(() => showToast("Failed to load global stats", "error"));
 
             loadAllOrgs();
-
-            return;
         }
     }
 
-    // --- AUTHENTICATION ---
+    // ===================== AUTH =====================
     function handleLogin() {
-        const email = document.getElementById('loginEmail').value;
+        const email    = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
-        const btn = document.querySelector("#login-screen button");
+        const btn      = document.querySelector("#login-screen button");
 
         if (!email || !password) return showToast("Enter credentials", "error");
 
         btn.innerText = "Logging in...";
-        btn.disabled = true;
+        btn.disabled  = true;
 
         fetch(`${API_BASE}/auth/login`, {
-            method: 'POST',
+            method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body:    JSON.stringify({ email, password })
         })
             .then(async res => {
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("Unauthorized");
                 return res.json();
             })
             .then(data => {
@@ -302,10 +309,7 @@
                 window.location.reload();
             })
             .catch(() => showToast("Invalid email or password", "error"))
-            .finally(() => {
-                btn.innerText = "Secure Login";
-                btn.disabled = false;
-            });
+            .finally(() => { btn.innerText = "Secure Login"; btn.disabled = false; });
     }
 
     function logout() {
@@ -313,72 +317,51 @@
         window.location.href = window.location.pathname;
     }
 
-    function secureFetch(url,opt={}){
+    function secureFetch(url, opt = {}) {
         const token = localStorage.getItem("jwt_token");
-
-        return fetch(url,{
+        return fetch(url, {
             ...opt,
-            headers:{
-                "Content-Type":"application/json",
-                "Authorization":"Bearer " + token
+            headers: {
+                "Content-Type":  "application/json",
+                "Authorization": "Bearer " + token
             }
         });
     }
 
-    // --- APP ACTIONS ---
-    function loadPublicData() {
-        fetch(`${API_BASE}/org/${currentOrgId}`)
-            .then(res => res.json())
-            .then(data => { document.getElementById('user-org-name').innerText = data.name; })
-            .catch(() => showToast("Could not load location", "error"));
-    }
+    // ===================== PUBLIC (CUSTOMER) =====================
 
-    function loadAdminData() {
-        secureFetch(`${API_BASE}/org/${currentOrgId}`)
-            .then(async res => {
-                if (!res.ok) throw new Error("Forbidden");
+    // FIX: was calling /api/org/{id} which requires ROLE_ORG_ADMIN or ROLE_SUPER_ADMIN.
+    // Now calls /api/queue/info/{id} which is permitAll.
+    function loadPublicData() {
+        fetch(`${API_BASE}/queue/info/${currentOrgId}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Not found");
                 return res.json();
             })
             .then(data => {
-                document.getElementById('admin-org-name').innerText =
-                    `${data.name} (ID: ${data.id})`;
-
-                const joinUrl = `${window.location.origin}${window.location.pathname}?orgId=${currentOrgId}&view=user`;
-
-                const qrBox = document.getElementById("qrcode");
-                qrBox.innerHTML = "";
-                new QRCode(qrBox, {
-                    text: joinUrl,
-                    width: 80,
-                    height: 80
-                });
+                document.getElementById('user-org-name').innerText = data.name;
             })
-            .catch(() => showToast("Access denied or failed to load org", "error"));
+            .catch(() => showToast("Could not load location info", "error"));
     }
 
     function joinQueue() {
-        const btn = document.getElementById('joinBtn');
+        const btn  = document.getElementById('joinBtn');
+        const name = document.getElementById('userName').value.trim();
+
+        if (!name) return showToast("Please enter your name", "error");
+
         btn.disabled = true;
 
-        const name = document.getElementById('userName').value;
-        if(!name) {
-            btn.disabled = false;
-            return showToast("Please enter your name", "error");
-        }
-
         fetch(`${API_BASE}/token/${currentOrgId}`, {
-            method: 'POST',
+            method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: name,
-                email: document.getElementById('userEmail').value
+            body:    JSON.stringify({
+                name:  name,
+                email: document.getElementById('userEmail').value.trim()
             })
         })
             .then(async res => {
-                if (!res.ok) {
-                    const err = await res.text();
-                    throw new Error(err);
-                }
+                if (!res.ok) { const err = await res.text(); throw new Error(err); }
                 return res.json();
             })
             .then(data => {
@@ -387,123 +370,143 @@
                 document.getElementById('my-token-display').innerText = data.tokenNumber;
                 showToast("Successfully joined queue!", "success");
             })
-            .catch(() => showToast("Failed to join queue", "error"))
+            .catch(err => showToast("Failed to join queue: " + err.message, "error"))
             .finally(() => btn.disabled = false);
+    }
+
+    // ===================== ORG ADMIN =====================
+    function loadAdminData() {
+        secureFetch(`${API_BASE}/org/${currentOrgId}`)
+            .then(async res => {
+                if (!res.ok) throw new Error("Forbidden");
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById('admin-org-name').innerText = `${data.name} (ID: ${data.id})`;
+
+                const joinUrl = `${window.location.origin}${window.location.pathname}?orgId=${currentOrgId}&view=user`;
+                const qrBox   = document.getElementById("qrcode");
+                qrBox.innerHTML = "";
+                new QRCode(qrBox, { text: joinUrl, width: 80, height: 80 });
+            })
+            .catch(() => showToast("Access denied or failed to load org", "error"));
     }
 
     function callNext() {
         secureFetch(`${API_BASE}/token/next/${currentOrgId}`, { method: 'PUT' })
             .then(async res => {
                 if (!res.ok) {
-                    const err = await res.text();
-                    showToast(err.includes("error") ? JSON.parse(err).error : "Queue is empty!", "info");
+                    const body = await res.json().catch(() => ({}));
+                    showToast(body.error || "Queue is empty!", "info");
                 } else {
                     showToast("Called next person", "success");
                 }
-            });
+            })
+            .catch(() => showToast("Network error", "error"));
     }
 
     function skipNext() {
         secureFetch(`${API_BASE}/token/skip/${currentOrgId}`, { method: 'PUT' })
             .then(async res => {
                 if (!res.ok) {
-                    const err = await res.text();
-                    showToast(err.includes("error") ? JSON.parse(err).error : "Queue is empty!", "info");
+                    const body = await res.json().catch(() => ({}));
+                    showToast(body.error || "Queue is empty!", "info");
                 } else {
                     showToast("Marked as no-show", "error");
                 }
-            });
+            })
+            .catch(() => showToast("Network error", "error"));
     }
 
+    // ===================== SUPER ADMIN =====================
     function createOrg() {
-        const name = document.getElementById("orgName").value;
-        const type = document.getElementById("orgType").value;
-        const prefix = document.getElementById("orgPrefix").value;
+        const name   = document.getElementById("orgName").value.trim();
+        const type   = document.getElementById("orgType").value.trim();
+        const prefix = document.getElementById("orgPrefix").value.trim();
 
-        if (!name || !type || !prefix)
-            return showToast("Fill all fields", "error");
+        if (!name || !type || !prefix) return showToast("Fill all fields", "error");
 
         secureFetch(`${API_BASE}/superadmin/create-org`, {
             method: "POST",
-            body: JSON.stringify({ name, type, prefix })
+            body:   JSON.stringify({ name, type, prefix })
         })
             .then(async res => {
-                if (!res.ok) {
-                    const err = await res.text();
-                    console.error("Create Org Error:", err);
-                    throw new Error(err);
-                }
+                if (!res.ok) { const err = await res.text(); throw new Error(err); }
                 return res.json();
             })
             .then(data => {
                 const credBox = document.getElementById("new-credentials");
                 credBox.classList.remove("hidden");
                 credBox.innerHTML = `
-            <strong>Account Created!</strong><br>
-            Email: ${data.adminEmail}<br>
-            Password: ${data.adminPassword}
-        `;
+                <strong>Account Created!</strong><br>
+                Email: ${data.adminEmail}<br>
+                Password: ${data.adminPassword}
+            `;
                 showToast("Client provisioned successfully", "success");
                 loadAllOrgs();
             })
             .catch(() => showToast("Failed to create organisation", "error"));
     }
 
-    // --- WEBSOCKETS ---
-    let stompClient = null;
-    function connectWebSocket() {
-        const socket = new SockJS(`${API_BASE.replace('/api', '')}/ws-queue`);
-        stompClient = Stomp.over(socket);
-        stompClient.debug = null;
-        stompClient.connect({}, function () {
-            stompClient.subscribe('/topic/queue/' + currentOrgId, function (message) {
-                const data = JSON.parse(message.body);
-
-                document.getElementById('now-serving-display').innerText = data.nowServing || "--";
-                document.getElementById('people-ahead-display').innerText = data.peopleAhead || "0";
-
-                const adminServing = document.getElementById('admin-now-serving');
-                if(adminServing) {
-                    adminServing.innerText = data.nowServing || "--";
-                    document.getElementById('admin-total-waiting').innerText = (data.peopleAhead || 0) + 1;
-                }
-            });
-        }, function () {
-            setTimeout(connectWebSocket, 3000); // ✅ reconnect
-        });
-    }
     function loadAllOrgs() {
         secureFetch(`${API_BASE}/superadmin/orgs`)
             .then(res => res.json())
             .then(orgs => {
                 const container = document.getElementById("org-list");
 
-                if (orgs.length === 0) {
+                if (!orgs || orgs.length === 0) {
                     container.innerHTML = `<p class="text-gray-500 text-sm">No clients yet</p>`;
                     return;
                 }
 
-                let html = "";
-                orgs.forEach(org => {
-                    html += `
+                container.innerHTML = orgs.map(org => `
                     <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 flex justify-between items-center hover:border-gray-600 transition">
                         <div>
                             <p class="font-bold text-white">${org.name}</p>
                             <p class="text-xs text-gray-500 mt-1">
-                                Tenant ID: ${org.id} • Prefix: ${org.prefix}
+                                Tenant ID: ${org.id} &bull; Prefix: ${org.prefix}
                             </p>
                         </div>
                         <span class="bg-green-500/10 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/20">
                             Active
                         </span>
                     </div>
-                `;
-                });
-
-                container.innerHTML = html;
+                `).join('');
             })
             .catch(() => showToast("Failed to load clients", "error"));
     }
+
+    // ===================== WEBSOCKETS =====================
+    let stompClient = null;
+
+    function connectWebSocket() {
+        const socket = new SockJS(`${API_BASE.replace('/api', '')}/ws-queue`);
+        stompClient  = Stomp.over(socket);
+        stompClient.debug = null; // suppress STOMP noise in console
+
+        stompClient.connect({}, function () {
+            stompClient.subscribe('/topic/queue/' + currentOrgId, function (message) {
+                const data = JSON.parse(message.body);
+
+                // Update customer tracking screen
+                const nowServingEl   = document.getElementById('now-serving-display');
+                const peopleAheadEl  = document.getElementById('people-ahead-display');
+                if (nowServingEl)  nowServingEl.innerText  = data.nowServing  || "--";
+                if (peopleAheadEl) peopleAheadEl.innerText = data.peopleAhead ?? "0";
+
+                // Update admin dashboard
+                const adminServingEl  = document.getElementById('admin-now-serving');
+                const adminWaitingEl  = document.getElementById('admin-total-waiting');
+                if (adminServingEl) adminServingEl.innerText = data.nowServing || "--";
+                if (adminWaitingEl) adminWaitingEl.innerText = (data.peopleAhead ?? 0) + (data.nowServing && data.nowServing !== "None" ? 1 : 0);
+            });
+        }, function () {
+            // Auto-reconnect on disconnect
+            setTimeout(connectWebSocket, 3000);
+        });
+    }
+
+    // ===================== BOOT =====================
     initApp();
 </script>
 </body>
