@@ -29,7 +29,7 @@ public class QueueController {
     private void broadcastQueueUpdate(Long orgId) {
         Map<String, Object> status = queueService.getQueueStatus(orgId);
         // FIX: Send the map directly — do NOT wrap in Optional (breaks JSON serialization)
-        messagingTemplate.convertAndSend("/topic/queue/" + orgId, status);
+        messagingTemplate.convertAndSend("/topic/queue/" + orgId, (Object) status);
     }
 
     // ============================================================
