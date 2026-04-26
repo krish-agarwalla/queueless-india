@@ -3,7 +3,6 @@ package com.queueless.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,14 +20,13 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
-    private static final long JWT_EXPIRATION = 1000 * 60 * 60 * 24; // 24 hours
+    private static final long JWT_EXPIRATION = 1000 * 60 * 60 * 24;
 
-    // ================= GENERATE TOKEN =================
+    // ✅ GENERATE TOKEN
     public String generateToken(UserDetails userDetails) {
 
         Map<String, Object> claims = new HashMap<>();
 
-        // 🔥 Add roles (important for future scalability)
         claims.put("roles", userDetails.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
@@ -36,36 +34,32 @@ public class JwtService {
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(userDetails.getUsername()) // email
+                .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // ================= EXTRACT USERNAME =================
+    // ✅ EXTRACT USERNAME
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // ================= VALIDATE TOKEN =================
+    // ✅ VALIDATE TOKEN
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
-    // ================= CHECK EXPIRY =================
     private boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    // ================= GENERIC CLAIM EXTRACTOR =================
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
+        return resolver.apply(extractAllClaims(token));
     }
 
-    // ================= EXTRACT ALL CLAIMS =================
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
@@ -74,9 +68,8 @@ public class JwtService {
                 .getBody();
     }
 
-    // ================= SIGNING KEY =================
+    // 🔥 FIXED KEY METHOD
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 }

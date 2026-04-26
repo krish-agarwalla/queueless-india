@@ -21,7 +21,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService; // ✅ use this instead of repository
+    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -32,24 +32,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        // 🔹 No token → continue request
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         final String jwt = authHeader.substring(7);
-        String userEmail = null;
+        String userEmail;
 
         try {
             userEmail = jwtService.extractUsername(jwt);
         } catch (Exception e) {
-            // 🔹 Invalid token → ignore and continue
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 🔹 Authenticate only if not already authenticated
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
