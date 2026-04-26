@@ -18,19 +18,16 @@ public class SuperAdminController {
     private final AdminService adminService;
 
     @PostMapping("/create-org")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createOrg(@RequestBody Map<String, String> req) {
 
-        var admin = adminService.createOrganisationWithAdmin(
-                req.get("name"),
-                req.get("type"),
-                req.get("prefix")
+        return ResponseEntity.ok(
+                adminService.createOrganisationWithAdmin(
+                        req.get("name"),
+                        req.get("type"),
+                        req.get("prefix")
+                )
         );
-
-        return ResponseEntity.ok(Map.of(
-                "adminEmail", admin.getEmail(),
-                "adminPassword", "Use initial password set during creation",
-                "orgId", admin.getOrganisation().getId()
-        ));
     }
 
     // 🔐 Only SUPER_ADMIN should access
