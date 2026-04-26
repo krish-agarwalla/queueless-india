@@ -67,8 +67,25 @@ public class QueueController {
     }
 
     @GetMapping("/org/{orgId}")
-    public ResponseEntity<Organisation> getOrg(@PathVariable Long orgId) {
-        return ResponseEntity.ok(queueService.getOrganisation(orgId));
+    public ResponseEntity<?> getOrg(@PathVariable Long orgId,
+                                    org.springframework.security.core.Authentication authentication) {
+
+        User user = (User) authentication.getPrincipal();
+
+        // SUPER ADMIN → allow any org
+        if (user.getRole().name().equals("SUPER_ADMIN")) {
+            return ResponseEntity.ok(queueService.getOrganisation(orgId));
+        }
+
+        // ORG ADMIN → allow only their own org
+        if (user.getRole().name().equals("ORG_ADMIN") &&
+                user.getOrganisation() != null &&
+                user.getOrganisation().getId().equals(orgId)) {
+
+            return ResponseEntity.ok(user.getOrganisation());
+        }
+
+        return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
     }
     @PutMapping("/token/skip/{orgId}")
     public ResponseEntity<?> skipNext(@PathVariable Long orgId) {
