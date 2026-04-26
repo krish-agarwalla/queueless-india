@@ -15,7 +15,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -44,8 +43,10 @@ public class AuthController {
                     user.getName()));
 
         } catch (Exception e) {
-            e.printStackTrace(); // 🔥 IMPORTANT
-            return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "Invalid credentials",
+                    "timestamp", System.currentTimeMillis()
+            ));
         }
     }
 }

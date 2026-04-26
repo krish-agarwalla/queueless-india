@@ -53,7 +53,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/org/**").hasAnyRole("SUPER_ADMIN", "ORG_ADMIN")
                         .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/queue/**").permitAll()
-                        .requestMatchers("/api/token/**").permitAll()
+                        .requestMatchers("/api/token/{orgId}").permitAll() // join queue
+                        .requestMatchers("/api/token/next/**").authenticated()
+                        .requestMatchers("/api/token/skip/**").authenticated()
 
                         // WebSocket endpoints
                         .requestMatchers("/ws-queue/**").permitAll()

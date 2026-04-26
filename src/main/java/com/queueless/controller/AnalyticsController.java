@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -18,6 +19,7 @@ public class AnalyticsController {
     private final OrganisationRepository orgRepo;
     private final TokenRepository tokenRepo;
 
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @GetMapping("/global")
     public ResponseEntity<Map<String, Object>> getGlobalStats() {
         long totalClients = orgRepo.count();
@@ -29,4 +31,5 @@ public class AnalyticsController {
                 "systemStatus", "Operational"
         ));
     }
+
 }
