@@ -43,16 +43,21 @@ public class QueueService {
 
         Organisation org = getOrganisation(orgId);
 
-        // Always create as CUSTOMER
-        User customer = new User();
+        // ✅ Prevent duplicate users
+        User customer = userRepository.findByEmail(userRequest.getEmail())
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setName(userRequest.getName());
+                    newUser.setEmail(userRequest.getEmail());
+                    newUser.setRole(Role.CUSTOMER);
+                    return userRepository.save(newUser);
+                });
+
         customer.setName(userRequest.getName());
-        customer.setEmail(userRequest.getEmail());
-        customer.setRole(Role.CUSTOMER);
 
-        customer = userRepository.save(customer);
-
-        long currentQueueSize = tokenRepository.countByOrganisationIdAndStatus(orgId, TokenStatus.WAITING);
-        String tokenNumber = org.getPrefix() + (currentQueueSize + 101);
+        // ✅ Safer token generation
+        long totalTokens = tokenRepository.countByOrganisationId(orgId);
+        String tokenNumber = org.getPrefix() + (totalTokens + 101);
 
         Token token = new Token();
         token.setTokenNumber(tokenNumber);
@@ -67,7 +72,7 @@ public class QueueService {
     // ================= CALL NEXT =================
     public Token callNextToken(Long orgId) {
 
-        Organisation org = getOrganisation(orgId); // defensive check
+        getOrganisation(orgId); // validation
 
         Token nextToken = tokenRepository
                 .findFirstByOrganisationIdAndStatusOrderByCreatedAtAsc(orgId, TokenStatus.WAITING)
@@ -80,7 +85,7 @@ public class QueueService {
     // ================= SKIP NEXT =================
     public Token skipNextToken(Long orgId) {
 
-        Organisation org = getOrganisation(orgId); // defensive check
+        getOrganisation(orgId);
 
         Token nextToken = tokenRepository
                 .findFirstByOrganisationIdAndStatusOrderByCreatedAtAsc(orgId, TokenStatus.WAITING)
@@ -93,7 +98,7 @@ public class QueueService {
     // ================= STATUS =================
     public Map<String, Object> getQueueStatus(Long orgId) {
 
-        Organisation org = getOrganisation(orgId); // defensive check
+        getOrganisation(orgId);
 
         long waitingCount = tokenRepository.countByOrganisationIdAndStatus(orgId, TokenStatus.WAITING);
 

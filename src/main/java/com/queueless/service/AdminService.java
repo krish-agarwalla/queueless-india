@@ -21,18 +21,20 @@ public class AdminService {
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
 
-    public User createOrganisationWithAdmin(String name, String type, String prefix) {
+    public Map<String, Object> createOrganisationWithAdmin(String name, String type, String prefix) {
 
+        // 🔹 Create Organisation
         Organisation org = new Organisation();
         org.setName(name);
         org.setType(type);
         org.setPrefix(prefix);
         org = orgRepo.save(org);
 
-        // Generate credentials
+        // 🔹 Generate credentials
         String email = name.toLowerCase().replace(" ", "") + "@client.com";
         String rawPassword = UUID.randomUUID().toString().substring(0, 8);
 
+        // 🔹 Create Admin User
         User admin = new User();
         admin.setName(name + " Admin");
         admin.setEmail(email);
@@ -42,14 +44,14 @@ public class AdminService {
 
         userRepo.save(admin);
 
-        // Attach raw password temporarily (for response)
-        admin.setPassword(rawPassword);
-
-        return (User) Map.of(
+        // 🔹 Return safe response (NOT entity)
+        return Map.of(
                 "adminEmail", email,
-                "adminPassword", rawPassword
+                "adminPassword", rawPassword,
+                "orgId", org.getId()
         );
     }
+
     public List<Organisation> getAllOrganisations() {
         return orgRepo.findAll();
     }
