@@ -25,22 +25,21 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
-            System.out.println("LOGIN ATTEMPT: " + request.getEmail());
-
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-
-            System.out.println("AUTH SUCCESS");
 
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             String jwtToken = jwtService.generateToken(user);
 
-            return ResponseEntity.ok(new AuthResponse(jwtToken, user.getRole().name(),
+            return ResponseEntity.ok(new AuthResponse(
+                    jwtToken,
+                    user.getRole().name(),
                     user.getOrganisation() != null ? user.getOrganisation().getId() : null,
-                    user.getName()));
+                    user.getName()
+            ));
 
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of(

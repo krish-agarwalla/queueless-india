@@ -4,10 +4,10 @@ import com.queueless.repository.OrganisationRepository;
 import com.queueless.repository.TokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -22,14 +22,13 @@ public class AnalyticsController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @GetMapping("/global")
     public ResponseEntity<Map<String, Object>> getGlobalStats() {
-        long totalClients = orgRepo.count();
-        long totalTokensEver = tokenRepo.count();
+        long totalClients      = orgRepo.count();
+        long totalTokensEver   = tokenRepo.count();
 
         return ResponseEntity.ok(Map.of(
-                "totalClients", totalClients,
+                "totalClients",      totalClients,
                 "totalTokensIssued", totalTokensEver,
-                "systemStatus", "Operational"
+                "systemStatus",      "Operational"
         ));
     }
-
 }

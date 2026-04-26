@@ -1,13 +1,10 @@
 package com.queueless.controller;
 
-import com.queueless.model.Organisation;
 import com.queueless.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,23 +14,34 @@ public class SuperAdminController {
 
     private final AdminService adminService;
 
+    /**
+     * POST /api/superadmin/create-org
+     * Creates a new organisation AND its ORG_ADMIN user in one call.
+     * Returns the generated email + password so the super-admin can hand them over.
+     */
     @PostMapping("/create-org")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> createOrg(@RequestBody Map<String, String> req) {
+    public ResponseEntity<?> createOrg(@RequestBody Map<String, String> body) {
+        String name   = body.get("name");
+        String type   = body.get("type");
+        String prefix = body.get("prefix");
 
-        return ResponseEntity.ok(
-                adminService.createOrganisationWithAdmin(
-                        req.get("name"),
-                        req.get("type"),
-                        req.get("prefix")
-                )
-        );
+        if (name == null || name.isBlank() ||
+                type == null || type.isBlank() ||
+                prefix == null || prefix.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "name, type and prefix are all required"));
+        }
+
+        Map<String, Object> result = adminService.createOrganisationWithAdmin(name, type, prefix);
+        return ResponseEntity.ok(result);
     }
 
-    // 🔐 Only SUPER_ADMIN should access
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    /**
+     * GET /api/superadmin/orgs
+     * Returns all organisations (for the Active Deployments list).
+     */
     @GetMapping("/orgs")
-    public ResponseEntity<List<Organisation>> getAllOrgs() {
+    public ResponseEntity<?> getAllOrgs() {
         return ResponseEntity.ok(adminService.getAllOrganisations());
     }
 }

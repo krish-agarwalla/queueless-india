@@ -10,11 +10,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 public class QueueController {
 
     private final QueueService queueService;
@@ -25,48 +23,67 @@ public class QueueController {
         this.messagingTemplate = messagingTemplate;
     }
 
-    // 🔥 Broadcast queue update
+    // ============================================================
+    // INTERNAL: Broadcast queue update over WebSocket
+    // ============================================================
     private void broadcastQueueUpdate(Long orgId) {
         Map<String, Object> status = queueService.getQueueStatus(orgId);
-        messagingTemplate.convertAndSend("/topic/queue/" + orgId, Optional.ofNullable(status));
+        // FIX: Send the map directly — do NOT wrap in Optional (breaks JSON serialization)
+        messagingTemplate.convertAndSend("/topic/queue/" + orgId, status);
     }
 
-    // ================= ORG =================
+    // ============================================================
+    // PUBLIC: Org info for the join-queue screen (no auth needed)
+    // ============================================================
+    @GetMapping("/queue/info/{orgId}")
+    public ResponseEntity<?> getPublicOrgInfo(@PathVariable Long orgId) {
+        Organisation org = queueService.getOrganisation(orgId);
+        return ResponseEntity.ok(Map.of(
+                "id",     org.getId(),
+                "name",   org.getName(),
+                "type",   org.getType(),
+                "prefix", org.getPrefix()
+        ));
+    }
 
+    // ============================================================
+    // ORG: Create organisation (super-admin / org-admin guard via SecurityConfig)
+    // ============================================================
     @PostMapping("/org")
     public ResponseEntity<Organisation> createOrg(@RequestBody Organisation org) {
         return ResponseEntity.ok(queueService.createOrganisation(org));
     }
 
-    // 🔐 GET ORG (FIXED - with proper security)
+    // ============================================================
+    // ORG: Get organisation details (admin only)
+    // ============================================================
     @GetMapping("/org/{orgId}")
     public ResponseEntity<?> getOrg(@PathVariable Long orgId, Authentication authentication) {
-
-        String email = authentication.getName(); // from JWT
+        String email = authentication.getName();
         User user = queueService.getUserByEmail(email);
 
         if (user == null) {
             return ResponseEntity.status(401).body(Map.of("error", "User not found"));
         }
 
-        // ✅ SUPER ADMIN → access any org
+        // SUPER_ADMIN can access any org
         if (user.getRole().name().equals("SUPER_ADMIN")) {
             return ResponseEntity.ok(queueService.getOrganisation(orgId));
         }
 
-        // ✅ ORG ADMIN → only own org
+        // ORG_ADMIN can only access their own org
         if (user.getRole().name().equals("ORG_ADMIN") &&
                 user.getOrganisation() != null &&
                 user.getOrganisation().getId().equals(orgId)) {
-
             return ResponseEntity.ok(user.getOrganisation());
         }
 
         return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
     }
 
-    // ================= JOIN QUEUE =================
-
+    // ============================================================
+    // QUEUE: Join (public, no auth needed)
+    // ============================================================
     @PostMapping("/token/{orgId}")
     public ResponseEntity<?> joinQueue(@PathVariable Long orgId, @RequestBody User user) {
         Token token = queueService.joinQueue(orgId, user);
@@ -74,13 +91,12 @@ public class QueueController {
         return ResponseEntity.ok(token);
     }
 
-    // ================= CALL NEXT =================
-
+    // ============================================================
+    // QUEUE: Call next (authenticated + org check)
+    // ============================================================
     @PutMapping("/token/next/{orgId}")
     public ResponseEntity<?> callNext(@PathVariable Long orgId, Authentication authentication) {
-
-        String email = authentication.getName();
-        User user = queueService.getUserByEmail(email);
+        User user = getAuthenticatedUser(authentication);
 
         if (!isAuthorizedForOrg(user, orgId)) {
             return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
@@ -95,13 +111,12 @@ public class QueueController {
         }
     }
 
-    // ================= SKIP NEXT =================
-
+    // ============================================================
+    // QUEUE: Skip next (authenticated + org check)
+    // ============================================================
     @PutMapping("/token/skip/{orgId}")
     public ResponseEntity<?> skipNext(@PathVariable Long orgId, Authentication authentication) {
-
-        String email = authentication.getName();
-        User user = queueService.getUserByEmail(email);
+        User user = getAuthenticatedUser(authentication);
 
         if (!isAuthorizedForOrg(user, orgId)) {
             return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
@@ -116,13 +131,12 @@ public class QueueController {
         }
     }
 
-    // ================= GET STATUS =================
-
+    // ============================================================
+    // QUEUE: Get live status (authenticated + org check)
+    // ============================================================
     @GetMapping("/queue/{orgId}")
     public ResponseEntity<?> getStatus(@PathVariable Long orgId, Authentication authentication) {
-
-        String email = authentication.getName();
-        User user = queueService.getUserByEmail(email);
+        User user = getAuthenticatedUser(authentication);
 
         if (!isAuthorizedForOrg(user, orgId)) {
             return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
@@ -131,15 +145,17 @@ public class QueueController {
         return ResponseEntity.ok(queueService.getQueueStatus(orgId));
     }
 
-    // ================= COMMON AUTH CHECK =================
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    private User getAuthenticatedUser(Authentication authentication) {
+        if (authentication == null) return null;
+        return queueService.getUserByEmail(authentication.getName());
+    }
 
     private boolean isAuthorizedForOrg(User user, Long orgId) {
         if (user == null) return false;
-
-        // SUPER ADMIN → always allowed
         if (user.getRole().name().equals("SUPER_ADMIN")) return true;
-
-        // ORG ADMIN → only own org
         return user.getOrganisation() != null &&
                 user.getOrganisation().getId().equals(orgId);
     }

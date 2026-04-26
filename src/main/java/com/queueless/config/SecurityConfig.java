@@ -36,33 +36,36 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. ADD THIS LINE: Enable CORS at the security level
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
 
-                        // 🔒 PROTECTED FIRST (IMPORTANT ORDER)
-                        .requestMatchers("/api/token/next/**").authenticated()
-                        .requestMatchers("/api/token/skip/**").authenticated()
-
-                        // 🖥️ UI & STATIC FILES (NEW: Let the browser load the HTML!)
+                        // Static files & UI
                         .requestMatchers("/", "/index.html", "/static/**", "/*.css", "/*.js").permitAll()
 
-                        // 🌍 PUBLIC API ENDPOINTS
+                        // Public auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/org/**").hasAnyRole("SUPER_ADMIN", "ORG_ADMIN")
-                        .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/queue/**").permitAll()
-                        .requestMatchers("/api/token/{orgId}").permitAll() // join queue
+
+                        // Public queue actions (join + public org info)
+                        .requestMatchers("/api/token/{orgId}").permitAll()
+                        .requestMatchers("/api/queue/info/**").permitAll()
+
+                        // WebSocket
+                        .requestMatchers("/ws-queue/**", "/topic/**", "/app/**").permitAll()
+
+                        // Protected queue actions
                         .requestMatchers("/api/token/next/**").authenticated()
                         .requestMatchers("/api/token/skip/**").authenticated()
+                        .requestMatchers("/api/queue/**").authenticated()
 
-                        // WebSocket endpoints
-                        .requestMatchers("/ws-queue/**").permitAll()
-                        .requestMatchers("/topic/**").permitAll()
-                        .requestMatchers("/app/**").permitAll()
+                        // Org admin only
+                        .requestMatchers("/api/org/**").hasAnyRole("SUPER_ADMIN", "ORG_ADMIN")
 
-                        // everything else
+                        // Super admin only
+                        .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/analytics/**").hasRole("SUPER_ADMIN")
+
+                        // Everything else requires auth
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -72,13 +75,12 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 2. ADD THIS BEAN: It tells Spring Security to allow cross-origin requests and custom headers
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*")); // Allow any frontend URL for testing
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Must allow OPTIONS
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type")); // Allow the JWT header
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -89,7 +91,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
     @Bean
